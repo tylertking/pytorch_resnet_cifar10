@@ -12,7 +12,9 @@ import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import resnet
-
+ 
+import json 
+    
 from augnorm import AugNorm
 
 model_names = sorted(name for name in resnet.__dict__
@@ -59,14 +61,25 @@ parser.add_argument('--save-every', dest='save_every',
                     type=int, default=10)
 best_prec1 = 0
 
+
+def reset_weights(m):
+  '''
+    Try resetting model weights to avoid
+    weight leakage.
+  '''
+  for layer in m.children():
+   if hasattr(layer, 'reset_parameters'):
+    print(f'Reset trainable parameters of layer = {layer}')
+    layer.reset_parameters()
+
 EXP = 3
 def replace_layernorm_with_augnorm(model):
-    for name, module in model.named_children():
+    for name, module in model.named_children():, phi
         if isinstance(module, torch.nn.LayerNorm):
             # Get the LayerNorm parameters
             normalized_shape = module.normalized_shape
             # eps = module.eps
-            new_module = AugNorm(phi=EXP, type='batch', shape=(normalized_shape))
+            new_module = AugNorm(phi=phi, type='batch', shape=(normalized_shape))
             # AugmentedLayerNorm(phi=EXP, num_features=normalized_shape[0])
             new_module.load_state_dict(module.state_dict())
             # Replace the LayerNorm layer with AugNorm
@@ -84,11 +97,10 @@ def main():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    model = resnet.__dict__[args.arch]()
-    replace_layernorm_with_augnorm(model)
-    model.to("cuda:0")
+    
 
     # optionally resume from a checkpoint
+
     if args.resume:
         if os.path.isfile(args.resume):
             print("=> loading checkpoint '{}'".format(args.resume))
@@ -149,31 +161,47 @@ def main():
         validate(val_loader, model, criterion)
         return
 
-    for epoch in range(args.start_epoch, args.epochs):
 
-        # train for one epoch
-        print('current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
-        train(train_loader, model, criterion, optimizer, epoch)
-        lr_scheduler.step()
+    phi_arr = [1.5, 2]
+    batch_arr = [64, 128, 512]
+    dic = {}
+    for phi in phi_arr: 
+        for batch in batch_arr:
 
-        # evaluate on validation set
-        prec1 = validate(val_loader, model, criterion)
+            train_loader = torch.utils.data.DataLoader(
+            datasets.CIFAR10(root='./data', train=True, transform=transforms.Compose([
+                transforms.RandomHorizontalFlip(),
+                transforms.RandomCrop(32, 4),
+                transforms.ToTensor(),
+                normalize,
+            ]), download=True),
+            batch_size=batch, shuffle=True,
+            num_workers=args.workers, pin_memory=True)
 
-        # remember best prec@1 and save checkpoint
-        is_best = prec1 > best_prec1
-        best_prec1 = max(prec1, best_prec1)
+            for iter in range(3):
+                results_arr = []
+                model = resnet.__dict__[args.arch]()
+                replace_layernorm_with_augnorm(model, phi)
+                model.to("cuda:0")
+                print(model)
 
-        if epoch > 0 and epoch % args.save_every == 0:
-            save_checkpoint({
-                'epoch': epoch + 1,
-                'state_dict': model.state_dict(),
-                'best_prec1': best_prec1,
-            }, is_best, filename=os.path.join(args.save_dir, 'checkpoint.th'))
+                best_prec1 = 0
+                for epoch in range(args.start_epoch, args.epochs):
 
-        save_checkpoint({
-            'state_dict': model.state_dict(),
-            'best_prec1': best_prec1,
-        }, is_best, filename=os.path.join(args.save_dir, 'model.th'))
+                    # train for one epoch
+                    print('current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
+                    train(train_loader, model, criterion, optimizer, epoch)
+                    lr_scheduler.step()
+
+                    # evaluate on validation set
+                    prec1 = validate(val_loader, model, criterion)
+
+                    results_arr.append(prec1)
+                dic[f"phi={phi}_batch={batch}_iter={iter}"] = results_arr
+                with open("results1.json", "w") as outfile: 
+                    json.dump(dic, outfile)
+
+
 
 
 def train(train_loader, model, criterion, optimizer, epoch):
