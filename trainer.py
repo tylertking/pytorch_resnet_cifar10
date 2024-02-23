@@ -74,35 +74,35 @@ def reset_weights(m):
     layer.reset_parameters()
 
 
-# def replace_layernorm_with_augnorm(module, phi):
-#         EXP = phi
-#         items = ['weight', 'bias', 'running_mean', 'running_var']
-#         for name, child in module.named_children():
-#             if isinstance(child, nn.Module):  # If the child is a nested module
-#                 replace_layernorm_with_augnorm(child, phi)
+def replace_layernorm_with_augnorm(module, phi):
+        EXP = phi
+        items = ['weight', 'bias', 'running_mean', 'running_var']
+        for name, child in module.named_children():
+            if isinstance(child, nn.Module):  # If the child is a nested module
+                replace_layernorm_with_augnorm(child, phi)
             
-#             # Replace the layer with the specified replacement layer type
-#             if isinstance(child, nn.BatchNorm2d):  # Example replacement for Linear layers
-#                 replacement = AugNorm(EXP, type='batch', shape=(len(child.bias)) )
-#                 for item in items: 
-#                     setattr(replacement, item, getattr(child, item))
-#                 setattr(module, name, replacement)
+            # Replace the layer with the specified replacement layer type
+            if isinstance(child, nn.BatchNorm2d):  # Example replacement for Linear layers
+                replacement = AugNorm(EXP, type='batch', shape=(len(child.bias)) )
+                for item in items: 
+                    setattr(replacement, item, getattr(child, item))
+                setattr(module, name, replacement)
                 
-def replace_layernorm_with_augnorm(model, phi):
-    for name, module in model.named_children():
-        if isinstance(module, torch.nn.BatchNorm2d):
-            # Get the LayerNorm parameters
-            normalized_shape = module.num_features
-            # eps = module.eps
-            new_module = AugNorm(phi=phi, type='batch', shape=(normalized_shape))
-            # AugmentedLayerNorm(phi=EXP, num_features=normalized_shape[0])
-            new_module.load_state_dict(module.state_dict())
-            # Replace the LayerNorm layer with AugNorm
-            setattr(model, name, new_module)
-            print(model)
-        else:
-            # Recursively apply this function to child modules
-            replace_layernorm_with_augnorm(module, phi)
+# def replace_layernorm_with_augnorm(model, phi):
+#     for name, module in model.named_children():
+#         if isinstance(module, torch.nn.BatchNorm2d):
+#             # Get the LayerNorm parameters
+#             normalized_shape = module.num_features
+#             # eps = module.eps
+#             new_module = AugNorm(phi=phi, type='batch', shape=(normalized_shape))
+#             # AugmentedLayerNorm(phi=EXP, num_features=normalized_shape[0])
+#             new_module.load_state_dict(module.state_dict())
+#             # Replace the LayerNorm layer with AugNorm
+#             setattr(model, name, new_module)
+#             print(model)
+#         else:
+#             # Recursively apply this function to child modules
+#             replace_layernorm_with_augnorm(module, phi)
 
 def main():
     global args, best_prec1
@@ -113,36 +113,11 @@ def main():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    
-
-    # optionally resume from a checkpoint
-
-    if args.resume:
-        if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}'".format(args.resume))
-            checkpoint = torch.load(args.resume)
-            args.start_epoch = checkpoint['epoch']
-            best_prec1 = checkpoint['best_prec1']
-            model.load_state_dict(checkpoint['state_dict'])
-            print("=> loaded checkpoint '{}' (epoch {})"
-                  .format(args.evaluate, checkpoint['epoch']))
-        else:
-            print("=> no checkpoint found at '{}'".format(args.resume))
 
     cudnn.benchmark = True
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-
-    train_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10(root='./data', train=True, transform=transforms.Compose([
-            transforms.RandomHorizontalFlip(),
-            transforms.RandomCrop(32, 4),
-            transforms.ToTensor(),
-            normalize,
-        ]), download=True),
-        batch_size=args.batch_size, shuffle=True,
-        num_workers=args.workers, pin_memory=True)
 
     val_loader = torch.utils.data.DataLoader(
         datasets.CIFAR10(root='./data', train=False, transform=transforms.Compose([
@@ -154,21 +129,6 @@ def main():
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().cuda()
-
-    if args.half:
-        model.half()
-        criterion.half()
-
-    if args.arch in ['resnet1202', 'resnet110']:
-        # for resnet1202 original paper uses lr=0.01 for first 400 minibatches for warm-up
-        # then switch back. In this setup it will correspond for first epoch.
-        for param_group in optimizer.param_groups:
-            param_group['lr'] = args.lr*0.1
-
-
-    if args.evaluate:
-        validate(val_loader, model, criterion)
-        return
 
 
     phi_arr = [1.5, 2]
@@ -185,7 +145,7 @@ def main():
                 normalize,
             ]), download=True),
             batch_size=batch, shuffle=True,
-            num_workers=args.workers, pin_memory=True)
+            num_workers=args.workers)
 
             for iter in range(3):
                 results_arr = []
@@ -206,6 +166,7 @@ def main():
                     # train for one epoch
                     print('current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
                     train(train_loader, model, criterion, optimizer, epoch)
+                    1/0
                     lr_scheduler.step()
 
                     # evaluate on validation set
@@ -227,13 +188,12 @@ def train(train_loader, model, criterion, optimizer, epoch):
     data_time = AverageMeter()
     losses = AverageMeter()
     top1 = AverageMeter()
-
     # switch to train mode
     model.train()
 
     end = time.time()
-    for i, (input, target) in enumerate(train_loader):
 
+    for i, (input, target) in enumerate(train_loader): # wtf is this printing???
         # measure data loading time
         data_time.update(time.time() - end)
 

@@ -99,16 +99,21 @@ class AugNorm(nn.Module):
 
         # The scale parameter and the shift parameter (model parameters) are
         # initialized to 1 and 0, respectively
-        self.weight = nn.Parameter(torch.ones(shape))
-        self.bias = nn.Parameter(torch.zeros(shape))
+        
         self.type = type
 
+        if type == 'batch':
+            self.weight = nn.Parameter(torch.ones((1, shape, 1, 1)))
+            self.bias = nn.Parameter(torch.zeros((1, shape, 1, 1)))
+            self.running_mean = torch.zeros((1, shape, 1, 1))
+            self.running_var = torch.ones((1, shape, 1, 1))
+            self.dim = (0, 2, 3)
+        else:
+            self.weight = nn.Parameter(torch.ones(shape))
+            self.bias = nn.Parameter(torch.zeros(shape))
+            self.dim = (2)
 
-        self.running_mean = torch.zeros(shape)
-        self.running_var = torch.ones(shape)
-        self.num_batches_tracked = 0
-        self.dim = (0, 2, 3)
-
+        print(self.weight.shape)
 
         # Exponent: constant choice for phi
         self.phi = phi
@@ -130,13 +135,15 @@ class AugNorm(nn.Module):
 
         if self.type == 'batch':
             with torch.no_grad():
-                moving_mean = (1.0 - momentum) * moving_mean + (momentum) * median
-                moving_var = (1.0 - momentum) * moving_var + (momentum) * var
+                self.running_mean = (1.0 - self.momentum) * self.running_mean + (self.momentum) * mean
+                self.running_var = (1.0 - self.momentum) * self.running_var + (self.momentum) * var
             
-            moving_mean = moving_mean.flatten()
-            moving_var = moving_var.flatten()
+            # self.running_mean = self.running_mean.flatten()
+            # self.running_var = self.running_var.flatten()
 
+            if not torch.is_grad_enabled():
+                X_hat = (X - self.running_mean[None, :, None, None]) / torch.sqrt(self.running_var[None, :, None, None] + self.eps)
 
-        Y = self.weight * X_hat + self.bias  # Scale and shift
+        Y = self.weight[None, :, None, None] * X_hat + self.bias[None, :, None, None]  # Scale and shift
         
         return Y
