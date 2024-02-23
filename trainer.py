@@ -144,13 +144,6 @@ def main():
         model.half()
         criterion.half()
 
-    optimizer = torch.optim.SGD(model.parameters(), args.lr,
-                                momentum=args.momentum,
-                                weight_decay=args.weight_decay)
-
-    lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
-                                                        milestones=[100, 150], last_epoch=args.start_epoch - 1)
-
     if args.arch in ['resnet1202', 'resnet110']:
         # for resnet1202 original paper uses lr=0.01 for first 400 minibatches for warm-up
         # then switch back. In this setup it will correspond for first epoch.
@@ -184,6 +177,12 @@ def main():
                 model = torchvision.models.resnet50(weights='IMAGENET1K_V2')
                 replace_layernorm_with_augnorm(model, phi)
                 model.to("cuda:0")
+                optimizer = torch.optim.SGD(model.parameters(), args.lr,
+                                momentum=args.momentum,
+                                weight_decay=args.weight_decay)
+
+                lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
+                                                        milestones=[100, 150], last_epoch=args.start_epoch - 1)
                 print(model)
 
                 best_prec1 = 0
