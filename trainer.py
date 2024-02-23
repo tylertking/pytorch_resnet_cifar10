@@ -92,7 +92,7 @@ def replace_layernorm_with_augnorm(model, phi):
     for name, module in model.named_children():
         if isinstance(module, torch.nn.BatchNorm2d):
             # Get the LayerNorm parameters
-            normalized_shape = module.normalized_shape
+            normalized_shape = module.num_features
             # eps = module.eps
             new_module = AugNorm(phi=phi, type='batch', shape=(normalized_shape))
             # AugmentedLayerNorm(phi=EXP, num_features=normalized_shape[0])
