@@ -166,7 +166,6 @@ def main():
                     # train for one epoch
                     print('current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
                     train(train_loader, model, criterion, optimizer, epoch)
-                    1/0
                     lr_scheduler.step()
 
                     # evaluate on validation set

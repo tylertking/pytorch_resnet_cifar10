@@ -137,9 +137,6 @@ class AugNorm(nn.Module):
             with torch.no_grad():
                 self.running_mean = (1.0 - self.momentum) * self.running_mean + (self.momentum) * mean
                 self.running_var = (1.0 - self.momentum) * self.running_var + (self.momentum) * var
-            
-            # self.running_mean = self.running_mean.flatten()
-            # self.running_var = self.running_var.flatten()
 
             if not torch.is_grad_enabled():
                 X_hat = (X - self.running_mean[None, :, None, None]) / torch.sqrt(self.running_var[None, :, None, None] + self.eps)
