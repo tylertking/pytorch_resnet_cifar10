@@ -103,12 +103,12 @@ class AugNorm(nn.Module):
         self.bias = nn.Parameter(torch.zeros(shape))
         self.type = type
 
-        if type == 'batch':
-            self.running_mean = torch.zeros(shape)
-            self.running_var = torch.ones(shape)
-            self.dim = (0, 2, 3)
-        else:
-            self.dim = (2)
+
+        self.running_mean = torch.zeros(shape)
+        self.running_var = torch.ones(shape)
+        self.num_batches_tracked
+        self.dim = (0, 2, 3)
+
 
         # Exponent: constant choice for phi
         self.phi = phi
