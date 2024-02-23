@@ -13,6 +13,8 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import resnet
 
+from augnorm import AugNorm
+
 model_names = sorted(name for name in resnet.__dict__
     if name.islower() and not name.startswith("__")
                      and name.startswith("resnet")
@@ -57,6 +59,20 @@ parser.add_argument('--save-every', dest='save_every',
                     type=int, default=10)
 best_prec1 = 0
 
+def replace_layernorm_with_augnorm(model):
+    for name, module in model.named_children():
+        if isinstance(module, torch.nn.LayerNorm):
+            # Get the LayerNorm parameters
+            normalized_shape = module.normalized_shape
+            # eps = module.eps
+            new_module = AugNorm(phi=EXP, type='batch', shape=(normalized_shape))
+            # AugmentedLayerNorm(phi=EXP, num_features=normalized_shape[0])
+            new_module.load_state_dict(module.state_dict())
+            # Replace the LayerNorm layer with AugNorm
+            setattr(model, name, new_module)
+        else:
+            # Recursively apply this function to child modules
+            replace_layernorm_with_augnorm(module)
 
 def main():
     global args, best_prec1
@@ -68,6 +84,7 @@ def main():
         os.makedirs(args.save_dir)
 
     model = torch.nn.DataParallel(resnet.__dict__[args.arch]())
+    replace_layernorm_with_augnorm(model)
     model.cuda()
 
     # optionally resume from a checkpoint
