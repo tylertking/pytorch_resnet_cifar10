@@ -84,9 +84,9 @@ def main():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    model = torch.nn.DataParallel(resnet.__dict__[args.arch]())
+    model = resnet.__dict__[args.arch]()
     replace_layernorm_with_augnorm(model)
-    model.cuda()
+    model.to("cuda:0")
 
     # optionally resume from a checkpoint
     if args.resume:
