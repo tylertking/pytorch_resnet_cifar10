@@ -74,12 +74,12 @@ def reset_weights(m):
     layer.reset_parameters()
 
 
-def replace_layers(module, phi):
+def replace_layernorm_with_augnorm(module, phi):
         EXP = phi
         items = ['weight', 'bias', 'running_mean', 'running_var']
         for name, child in module.named_children():
             if isinstance(child, nn.Module):  # If the child is a nested module
-                replace_layers(child, phi)
+                replace_layernorm_with_augnorm(child, phi)
             
             # Replace the layer with the specified replacement layer type
             if isinstance(child, nn.BatchNorm2d):  # Example replacement for Linear layers
