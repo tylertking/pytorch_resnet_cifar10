@@ -12,6 +12,7 @@ import torch.utils.data
 import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import resnet
+import torchvision
  
 import json 
     
@@ -163,7 +164,7 @@ def main():
 
 
     phi_arr = [1.5, 2]
-    batch_arr = [64, 128, 512]
+    batch_arr = [128, 512, 64]
     dic = {}
     for phi in phi_arr: 
         for batch in batch_arr:
@@ -180,7 +181,7 @@ def main():
 
             for iter in range(3):
                 results_arr = []
-                model = resnet.__dict__[args.arch]()
+                model = torchvision.models.resnet50(weights='IMAGENET1K_V2')
                 replace_layernorm_with_augnorm(model, phi)
                 model.to("cuda:0")
                 print(model)
