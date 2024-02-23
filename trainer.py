@@ -85,6 +85,7 @@ def replace_layernorm_with_augnorm(module, phi):
             if isinstance(child, nn.BatchNorm2d):  # Example replacement for Linear layers
                 replacement = AugNorm(EXP, type='batch', shape=(len(child.bias)) )
                 for item in items: 
+                    print(getattr(child, item).shape)
                     setattr(replacement, item, getattr(child, item))
                 setattr(module, name, replacement)
                 

@@ -113,8 +113,6 @@ class AugNorm(nn.Module):
             self.bias = nn.Parameter(torch.zeros(shape))
             self.dim = (2)
 
-        print(self.weight.shape)
-
         # Exponent: constant choice for phi
         self.phi = phi
 
@@ -135,12 +133,14 @@ class AugNorm(nn.Module):
 
         if self.type == 'batch':
             with torch.no_grad():
-                self.running_mean = (1.0 - self.momentum) * self.running_mean + (self.momentum) * mean
-                self.running_var = (1.0 - self.momentum) * self.running_var + (self.momentum) * var
+                self.running_mean = (1.0 - self.momentum) * self.running_mean + (self.momentum) * mean.flatten()
+                self.running_var = (1.0 - self.momentum) * self.running_var + (self.momentum) * var.flatten()
 
             if not torch.is_grad_enabled():
                 X_hat = (X - self.running_mean[None, :, None, None]) / torch.sqrt(self.running_var[None, :, None, None] + self.eps)
 
-        Y = self.weight[None, :, None, None] * X_hat + self.bias[None, :, None, None]  # Scale and shift
-        
+            Y = self.weight[None, :, None, None] * X_hat + self.bias[None, :, None, None]  # Scale and shift
+        else:
+            Y = self.weight * X_hat + self.bias # Scale and shift
+
         return Y
