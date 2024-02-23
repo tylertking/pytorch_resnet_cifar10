@@ -59,6 +59,7 @@ parser.add_argument('--save-every', dest='save_every',
                     type=int, default=10)
 best_prec1 = 0
 
+EXP = 3
 def replace_layernorm_with_augnorm(model):
     for name, module in model.named_children():
         if isinstance(module, torch.nn.LayerNorm):
