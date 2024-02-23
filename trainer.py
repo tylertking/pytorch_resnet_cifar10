@@ -87,7 +87,7 @@ def replace_layernorm_with_augnorm(model, phi):
             setattr(model, name, new_module)
         else:
             # Recursively apply this function to child modules
-            replace_layernorm_with_augnorm(module)
+            replace_layernorm_with_augnorm(module, phi)
 
 def main():
     global args, best_prec1
