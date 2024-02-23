@@ -73,22 +73,36 @@ def reset_weights(m):
     print(f'Reset trainable parameters of layer = {layer}')
     layer.reset_parameters()
 
-EXP = 3
-def replace_layernorm_with_augnorm(model, phi):
-    for name, module in model.named_children():
-        if isinstance(module, torch.nn.LayerNorm):
-            # Get the LayerNorm parameters
-            normalized_shape = module.normalized_shape
-            # eps = module.eps
-            new_module = AugNorm(phi=phi, type='batch', shape=(normalized_shape))
-            # AugmentedLayerNorm(phi=EXP, num_features=normalized_shape[0])
-            new_module.load_state_dict(module.state_dict())
-            # Replace the LayerNorm layer with AugNorm
-            setattr(model, name, new_module)
-            print(model)
-        else:
-            # Recursively apply this function to child modules
-            replace_layernorm_with_augnorm(module, phi)
+
+def replace_layers(module, phi):
+        EXP = phi
+        items = ['weight', 'bias', 'running_mean', 'running_var']
+        for name, child in module.named_children():
+            if isinstance(child, nn.Module):  # If the child is a nested module
+                replace_layers(child, phi)
+            
+            # Replace the layer with the specified replacement layer type
+            if isinstance(child, nn.BatchNorm2d):  # Example replacement for Linear layers
+                replacement = AugNorm(EXP, type='batch', shape=(len(child.bias)) )
+                for item in items: 
+                    setattr(replacement, item, getattr(child, item))
+                setattr(module, name, replacement)
+                
+# def replace_layernorm_with_augnorm(model, phi):
+#     for name, module in model.named_children():
+#         if isinstance(module, torch.nn.LayerNorm):
+#             # Get the LayerNorm parameters
+#             normalized_shape = module.normalized_shape
+#             # eps = module.eps
+#             new_module = AugNorm(phi=phi, type='batch', shape=(normalized_shape))
+#             # AugmentedLayerNorm(phi=EXP, num_features=normalized_shape[0])
+#             new_module.load_state_dict(module.state_dict())
+#             # Replace the LayerNorm layer with AugNorm
+#             setattr(model, name, new_module)
+#             print(model)
+#         else:
+#             # Recursively apply this function to child modules
+#             replace_layernorm_with_augnorm(module, phi)
 
 def main():
     global args, best_prec1
