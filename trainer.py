@@ -85,6 +85,7 @@ def replace_layernorm_with_augnorm(model, phi):
             new_module.load_state_dict(module.state_dict())
             # Replace the LayerNorm layer with AugNorm
             setattr(model, name, new_module)
+            print(model)
         else:
             # Recursively apply this function to child modules
             replace_layernorm_with_augnorm(module, phi)
