@@ -85,7 +85,6 @@ def replace_layernorm_with_augnorm(module, phi):
             if isinstance(child, nn.BatchNorm2d):  # Example replacement for Linear layers
                 replacement = AugNorm(EXP, type='batch', shape=(len(child.bias)) )
                 for item in items: 
-                    print(getattr(child, item).shape)
                     setattr(replacement, item, getattr(child, item))
                 setattr(module, name, replacement)
                 
@@ -107,6 +106,7 @@ def replace_layernorm_with_augnorm(module, phi):
 
 def main():
     global args, best_prec1
+    device = "cuda:1"
     args = parser.parse_args()
 
 
@@ -129,7 +129,7 @@ def main():
         num_workers=args.workers, pin_memory=True)
 
     # define loss function (criterion) and optimizer
-    criterion = nn.CrossEntropyLoss().cuda()
+    criterion = nn.CrossEntropyLoss().to(device)
 
 
     phi_arr = [1.5, 2]
@@ -152,7 +152,7 @@ def main():
                 results_arr = []
                 model = torchvision.models.resnet50(weights='IMAGENET1K_V2')
                 replace_layernorm_with_augnorm(model, phi)
-                model.to("cuda:0")
+                model.to(device)
                 optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
@@ -174,7 +174,7 @@ def main():
 
                     results_arr.append(prec1)
                 dic[f"phi={phi}_batch={batch}_iter={iter}"] = results_arr
-                with open("results1.json", "w") as outfile: 
+                with open("results_phi={phi}.json", "w") as outfile: 
                     json.dump(dic, outfile)
 
 
@@ -197,8 +197,8 @@ def train(train_loader, model, criterion, optimizer, epoch):
         # measure data loading time
         data_time.update(time.time() - end)
 
-        target = target.cuda()
-        input_var = input.cuda()
+        target = target.to(device)()
+        input_var = input.to(device)()
         target_var = target
         if args.half:
             input_var = input_var.half()
@@ -247,9 +247,9 @@ def validate(val_loader, model, criterion):
     end = time.time()
     with torch.no_grad():
         for i, (input, target) in enumerate(val_loader):
-            target = target.cuda()
-            input_var = input.cuda()
-            target_var = target.cuda()
+            target = target.to(device)()
+            input_var = input.to(device)()
+            target_var = target.to(device)()
 
             if args.half:
                 input_var = input_var.half()
