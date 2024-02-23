@@ -18,6 +18,9 @@ import json
     
 from augnorm import AugNorm
 
+device = "cuda:1"
+phi_arr = [phi]
+
 model_names = sorted(name for name in resnet.__dict__
     if name.islower() and not name.startswith("__")
                      and name.startswith("resnet")
@@ -106,7 +109,6 @@ def replace_layernorm_with_augnorm(module, phi):
 
 def main():
     global args, best_prec1
-    device = "cuda:1"
     args = parser.parse_args()
 
 
@@ -132,7 +134,6 @@ def main():
     criterion = nn.CrossEntropyLoss().to(device)
 
 
-    phi_arr = [1.5, 2]
     batch_arr = [128, 512, 64]
     dic = {}
     for phi in phi_arr: 
@@ -174,7 +175,7 @@ def main():
 
                     results_arr.append(prec1)
                 dic[f"phi={phi}_batch={batch}_iter={iter}"] = results_arr
-                with open("results_phi={phi}.json", "w") as outfile: 
+                with open(f"results_phi={phi}.json", "w") as outfile: 
                     json.dump(dic, outfile)
 
 
@@ -197,8 +198,8 @@ def train(train_loader, model, criterion, optimizer, epoch):
         # measure data loading time
         data_time.update(time.time() - end)
 
-        target = target.to(device)()
-        input_var = input.to(device)()
+        target = target.to(device)
+        input_var = input.to(device)
         target_var = target
         if args.half:
             input_var = input_var.half()
@@ -247,9 +248,9 @@ def validate(val_loader, model, criterion):
     end = time.time()
     with torch.no_grad():
         for i, (input, target) in enumerate(val_loader):
-            target = target.to(device)()
-            input_var = input.to(device)()
-            target_var = target.to(device)()
+            target = target.to(device)
+            input_var = input.to(device)
+            target_var = target.to(device)
 
             if args.half:
                 input_var = input_var.half()
