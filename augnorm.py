@@ -106,7 +106,7 @@ class AugNorm(nn.Module):
 
         self.running_mean = torch.zeros(shape)
         self.running_var = torch.ones(shape)
-        self.num_batches_tracked
+        self.num_batches_tracked = 0
         self.dim = (0, 2, 3)
 
 
