@@ -75,7 +75,7 @@ def reset_weights(m):
 
 EXP = 3
 def replace_layernorm_with_augnorm(model):
-    for name, module in model.named_children():, phi
+    for name, module in model.named_children():
         if isinstance(module, torch.nn.LayerNorm):
             # Get the LayerNorm parameters
             normalized_shape = module.normalized_shape
