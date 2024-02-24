@@ -157,6 +157,7 @@ def main():
             for iter in range(3):
                 results_arr = []
                 model = torchvision.models.resnet50(weights='IMAGENET1K_V2')
+                model = nn.sequential(model, nn.Linear(1000, 100))
                 replace_layernorm_with_augnorm(model, phi)
                 model.to(device)
                 optimizer = torch.optim.SGD(model.parameters(), args.lr,
