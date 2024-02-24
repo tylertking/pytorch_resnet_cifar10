@@ -19,7 +19,7 @@ import json
 from augnorm import AugNorm
 
 device = "cuda:1"
-phi_arr = [phi]
+phi_arr = [1.5]
 
 model_names = sorted(name for name in resnet.__dict__
     if name.islower() and not name.startswith("__")
@@ -123,7 +123,8 @@ def main():
                                      std=[0.229, 0.224, 0.225])
 
     val_loader = torch.utils.data.DataLoader(
-        datasets.CIFAR10(root='./data', train=False, transform=transforms.Compose([
+        datasets.FGVCAircraft(root='./data', split='test', transform=transforms.Compose([
+            transforms.Resize(224),
             transforms.ToTensor(),
             normalize,
         ])),
@@ -140,9 +141,9 @@ def main():
         for batch in batch_arr:
 
             train_loader = torch.utils.data.DataLoader(
-            datasets.CIFAR10(root='./data', train=True, transform=transforms.Compose([
-                transforms.RandomHorizontalFlip(),
-                transforms.RandomCrop(32, 4),
+            datasets.FGVCAircraft(root='./data', split='trainval', transform=transforms.Compose([
+                #transforms.RandomHorizontalFlip(),
+                transforms.Resize(224),
                 transforms.ToTensor(),
                 normalize,
             ]), download=True),
@@ -158,8 +159,8 @@ def main():
                                 momentum=args.momentum,
                                 weight_decay=args.weight_decay)
 
-                lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,
-                                                        milestones=[100, 150], last_epoch=args.start_epoch - 1)
+                lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,gamma=0.2,
+                                                        milestones=[60, 120, 160], last_epoch=args.start_epoch - 1)
                 print(model)
 
                 best_prec1 = 0
