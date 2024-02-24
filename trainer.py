@@ -150,7 +150,7 @@ def main():
             transforms.ToTensor(),
             normalize,
         ]), download=True),
-        batch_size=batch, shuffle=True,
+        batch_size=batch_arr[0], shuffle=True,
         num_workers=args.workers, collate_fn=collate_fn)
 
         for phi in phi_arr:
