@@ -123,10 +123,8 @@ def main():
                                      std=[0.229, 0.224, 0.225])
 
     def collate_fn(batch):
-        return {
-            'pixel_values': torch.stack([x[0] for x in batch]),
-            'labels': torch.tensor([x[1] for x in batch])
-        }
+        return torch.stack([x[0] for x in batch]), torch.tensor([x[1] for x in batch])
+
 
     val_loader = torch.utils.data.DataLoader(
         datasets.FGVCAircraft(root='./data', split='test', download=True, transform=transforms.Compose([
