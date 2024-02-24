@@ -204,7 +204,10 @@ def train(train_loader, model, criterion, optimizer, epoch):
     for i, (input, target) in enumerate(train_loader): # wtf is this printing???
         # measure data loading time
         data_time.update(time.time() - end)
-
+        print(target)
+        print(type(target))
+        print(input)
+        print(type(input))
         target = target.to(device)
         input_var = input.to(device)
         target_var = target
