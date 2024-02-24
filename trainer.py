@@ -180,9 +180,9 @@ def main():
                     prec1 = validate(val_loader, model, criterion)
 
                     results_arr.append(prec1)
-                dic[f"phi={phi}_batch={batch}_iter={iter}"] = results_arr
-                with open(f"fgvc/fgvc_results_phi={phi}.json", "w") as outfile: 
-                    json.dump(dic, outfile)
+                    dic[f"phi={phi}_batch={batch}_iter={iter}"] = results_arr
+                    with open(f"fgvc/fgvc_results_phi={phi}.json", "w") as outfile: 
+                        json.dump(dic, outfile)
 
 
 
