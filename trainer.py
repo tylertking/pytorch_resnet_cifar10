@@ -130,7 +130,7 @@ def main():
 
     val_loader = torch.utils.data.DataLoader(
         datasets.FGVCAircraft(root='./data', split='test', download=True, transform=transforms.Compose([
-            transforms.Resize(224),
+            transforms.Resize((224, 224)),
             transforms.ToTensor(),
             normalize,
         ])),
@@ -149,7 +149,7 @@ def main():
             train_loader = torch.utils.data.DataLoader(
             datasets.FGVCAircraft(root='./data', split='trainval', transform=transforms.Compose([
                 #transforms.RandomHorizontalFlip(),
-                transforms.Resize(224),
+                transforms.Resize((224, 224)),
                 transforms.ToTensor(),
                 normalize,
             ]), download=True),
