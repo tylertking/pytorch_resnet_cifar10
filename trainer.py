@@ -122,14 +122,20 @@ def main():
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
 
+    def collate_fn(batch):
+        return {
+            'pixel_values': torch.stack([x['pixel_values'] for x in batch]),
+            'labels': torch.tensor([x['labels'] for x in batch])
+        }
+
     val_loader = torch.utils.data.DataLoader(
-        datasets.FGVCAircraft(root='./data', split='test', transform=transforms.Compose([
+        datasets.FGVCAircraft(root='./data', split='test', download=True, transform=transforms.Compose([
             transforms.Resize(224),
             transforms.ToTensor(),
             normalize,
         ])),
         batch_size=128, shuffle=False,
-        num_workers=args.workers, pin_memory=True)
+        num_workers=args.workers, pin_memory=True,)
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().to(device)
