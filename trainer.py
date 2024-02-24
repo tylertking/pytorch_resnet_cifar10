@@ -176,7 +176,7 @@ def main():
 
                     results_arr.append(prec1)
                 dic[f"phi={phi}_batch={batch}_iter={iter}"] = results_arr
-                with open(f"results_phi={phi}.json", "w") as outfile: 
+                with open(f"fgvc/fgvc_results_phi={phi}.json", "w") as outfile: 
                     json.dump(dic, outfile)
 
 
