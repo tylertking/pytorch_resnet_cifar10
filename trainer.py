@@ -135,7 +135,7 @@ def main():
             normalize,
         ])),
         batch_size=128, shuffle=False,
-        num_workers=args.workers, pin_memory=True,)
+        num_workers=args.workers, pin_memory=True, collate_fn=collate_fn)
 
     # define loss function (criterion) and optimizer
     criterion = nn.CrossEntropyLoss().to(device)
