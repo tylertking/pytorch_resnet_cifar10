@@ -139,50 +139,49 @@ def main():
     criterion = nn.CrossEntropyLoss().to(device)
 
 
-    batch_arr = [128, 512, 64]
+    batch_arr = [128]
     dic = {}
-    for phi in phi_arr: 
-        for batch in batch_arr:
+    for iter in range(3): 
 
-            train_loader = torch.utils.data.DataLoader(
-            datasets.FGVCAircraft(root='./data', split='trainval', transform=transforms.Compose([
-                #transforms.RandomHorizontalFlip(),
-                transforms.Resize((224, 224)),
-                transforms.ToTensor(),
-                normalize,
-            ]), download=True),
-            batch_size=batch, shuffle=True,
-            num_workers=args.workers, collate_fn=collate_fn)
+        train_loader = torch.utils.data.DataLoader(
+        datasets.FGVCAircraft(root='./data', split='trainval', transform=transforms.Compose([
+            #transforms.RandomHorizontalFlip(),
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            normalize,
+        ]), download=True),
+        batch_size=batch, shuffle=True,
+        num_workers=args.workers, collate_fn=collate_fn)
 
-            for iter in range(3):
-                results_arr = []
-                model = torchvision.models.resnet50(weights='IMAGENET1K_V2')
-                model = nn.Sequential(model, nn.Linear(1000, 100))
-                replace_layernorm_with_augnorm(model, phi)
-                model.to(device)
-                optimizer = torch.optim.SGD(model.parameters(), args.lr,
-                                momentum=args.momentum,
-                                weight_decay=args.weight_decay)
+        for phi in phi_arr:
+            results_arr = []
+            model = torchvision.models.resnet50(weights='IMAGENET1K_V2')
+            model = nn.Sequential(model, nn.Linear(1000, 100))
+            replace_layernorm_with_augnorm(model, phi)
+            model.to(device)
+            optimizer = torch.optim.SGD(model.parameters(), args.lr,
+                            momentum=args.momentum,
+                            weight_decay=args.weight_decay)
 
-                lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,gamma=0.2,
-                                                        milestones=[60, 120, 160], last_epoch=args.start_epoch - 1)
-                print(model)
+            lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer,gamma=0.2,
+                                                    milestones=[60, 120, 160], last_epoch=args.start_epoch - 1)
+            print(model)
 
-                best_prec1 = 0
-                for epoch in range(args.start_epoch, args.epochs):
+            best_prec1 = 0
+            for epoch in range(args.start_epoch, args.epochs):
 
-                    # train for one epoch
-                    print('current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
-                    train(train_loader, model, criterion, optimizer, epoch)
-                    lr_scheduler.step()
+                # train for one epoch
+                print('current lr {:.5e}'.format(optimizer.param_groups[0]['lr']))
+                train(train_loader, model, criterion, optimizer, epoch)
+                lr_scheduler.step()
 
-                    # evaluate on validation set
-                    prec1 = validate(val_loader, model, criterion)
+                # evaluate on validation set
+                prec1 = validate(val_loader, model, criterion)
 
-                    results_arr.append(prec1)
-                    dic[f"phi={phi}_batch={batch}_iter={iter}"] = results_arr
-                    with open(f"fgvc/fgvc_results_phi={phi}.json", "w") as outfile: 
-                        json.dump(dic, outfile)
+                results_arr.append(prec1)
+                dic[f"phi={phi}_batch={batch}_iter={iter}"] = results_arr
+                with open(f"fgvc/fgvc_results_phi={phi}.json", "w") as outfile: 
+                    json.dump(dic, outfile)
 
 
 
