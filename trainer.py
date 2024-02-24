@@ -123,12 +123,9 @@ def main():
                                      std=[0.229, 0.224, 0.225])
 
     def collate_fn(batch):
-        for x in batch:
-            print(x)
-            
         return {
-            'pixel_values': torch.stack([x['pixel_values'] for x in batch]),
-            'labels': torch.tensor([x['labels'] for x in batch])
+            'pixel_values': torch.stack([x[0] for x in batch]),
+            'labels': torch.tensor([x[1] for x in batch])
         }
 
     val_loader = torch.utils.data.DataLoader(
