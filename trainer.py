@@ -154,7 +154,7 @@ def main():
                 normalize,
             ]), download=True),
             batch_size=batch, shuffle=True,
-            num_workers=args.workers)
+            num_workers=args.workers, collate_fn=collate_fn)
 
             for iter in range(3):
                 results_arr = []
