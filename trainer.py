@@ -140,9 +140,10 @@ def main():
 
 
     batch_arr = [128]
-    dic = {}
     for iter in range(3): 
+        dic = {}
 
+  
         train_loader = torch.utils.data.DataLoader(
         datasets.FGVCAircraft(root='./data', split='trainval', transform=transforms.Compose([
             #transforms.RandomHorizontalFlip(),
@@ -180,7 +181,7 @@ def main():
 
                 results_arr.append(prec1)
                 dic[f"phi={phi}_batch={batch}_iter={iter}"] = results_arr
-                with open(f"fgvc/fgvc_results_phi={phi}.json", "w") as outfile: 
+                with open(f"fgvc/fgvc2_results_iter={iter}.json", "w") as outfile: 
                     json.dump(dic, outfile)
 
 
