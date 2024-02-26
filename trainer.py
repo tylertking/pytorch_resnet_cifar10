@@ -140,6 +140,7 @@ def main():
 
 
     batch_arr = [128]
+    batch = batch_arr[0]
     for iter in range(3): 
         dic = {}
 
